@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사진 촬영 및 구글 드라이브 업로드</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>📸 사진 촬영 & 구글 드라이브 업로드</h1>
+    </header>
+
+    <main>
+        <section id="authSection">
+            <p>Google Drive에 사진을 업로드하려면 먼저 로그인해주세요.</p>
+            <button id="authorize_button" style="display: none;">Google Drive 로그인</button>
+            <button id="signout_button" style="display: none;">Google Drive 로그아웃</button>
+        </section>
+
+        <section id="app_content" style="display: none;">
+            <!-- 카메라 섹션 (모바일/태블릿 전용) -->
+            <div class="camera-section">
+                <h2>📷 사진 촬영</h2>
+                
+                <div class="camera-controls">
+                    <button id="smartCameraButton">📸 사진 촬영</button>
+                    <input type="file" id="nativeCameraInput" accept="image/*" capture="environment" style="display: none;" multiple>
+                </div>
+            </div>
+
+            <!-- 사진 미리보기 -->
+            <div class="preview-section">
+                <h2>🖼️ 사진 미리보기</h2>
+                <div id="imagePreviewContainer">
+                </div>
+            </div>
+
+            <!-- 파일 선택 섹션 (기존 기능 유지) -->
+            <div class="file-section">
+                <h2 class="toggle-header" onclick="toggleFileSection()">
+                    📁 파일 선택 
+                    <span class="toggle-icon collapsed" id="fileToggleIcon">▶</span>
+                </h2>
+                <div class="file-content collapsed" id="fileContent">
+                    <div class="form-group">
+                        <label for="fileInput">사진 파일 선택 (여러 장 가능):</label>
+                        <input type="file" id="fileInput" accept="image/*" multiple>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 파일명 설정 및 업로드 -->
+            <div class="upload-section">
+                <div class="date-input-group">
+                    <div class="form-group">
+                        <label for="photoDate">📅 지출 날짜 (필수):</label>
+                        <input type="date" id="photoDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fileName">📝 파일명 (필수):</label>
+                        <input type="text" id="fileName" placeholder="예: 가족여행" required>
+                    </div>
+                </div>
+                <div class="help-text">"지출날짜_파일명_저장날짜"로 저장됩니다. 파일명은 금액_구매처_물품 등 구분이 용이하도록 입력하세요.</div>
+
+                <button id="uploadButton">사진을 Google Drive에 업로드</button>
+                <button id="clearPhotosButton">모든 사진 삭제</button>
+            </div>
+        </section>
+
+        <section id="statusSection">
+            <h2>📊 업로드 상태</h2>
+            <div id="uploadStatus">
+                <!-- API 로딩 중 상태 -->
+                <div id="apiLoading" class="status-message">
+                    <div id="loadingIcon" class="loading-icon">🔄</div>
+                    <div id="loadingText" class="loading-text">Google API 로드 중... 잠시 기다려주세요.</div>
+                </div>
+                
+                <!-- API 준비 완료 상태 -->
+                <div id="apiReady" class="status-message" style="display: none;">
+                    <div id="readyTitle" class="ready-title">✅ 준비 완료!</div>
+                    <div id="readyInstruction" class="ready-instruction"><strong>Google Drive 로그인</strong> 버튼을 클릭하여 시작하세요.</div>
+                    <div id="readyInfo" class="ready-info">사진 업로드 시 지정된 폴더로 저장됩니다.</div>
+                </div>
+                
+                <!-- 로그인 성공 상태 -->
+                <div id="loginSuccess" class="status-message" style="display: none;">
+                    <div id="loginSuccessIcon" class="login-success-icon">✅</div>
+                    <div id="loginSuccessTitle" class="login-success-title">성공적으로 로그인되었습니다!</div>
+                    <div id="loginSuccessInfo" class="login-success-info">이제 사진을 촬영하거나 업로드할 수 있습니다.</div>
+                </div>
+                
+                <!-- 업로드 진행 중 상태 -->
+                <div id="uploadProgress" class="status-message" style="display: none;">
+                    <div id="uploadIcon" class="upload-icon">🚀</div>
+                    <div id="uploadProgressText" class="upload-progress-text">업로드 시작 중...</div>
+                    <div id="uploadProgressDetails" class="upload-progress-details"></div>
+                </div>
+                
+                <!-- 일반 메시지 표시용 -->
+                <div id="generalMessage" class="status-message" style="display: none;">
+                    <div id="generalMessageContent"></div>
+                </div>
+                
+                <!-- 에러 메시지 템플릿들 -->
+                <div id="errorTemplate" class="status-message" style="display: none;">
+                    <div class="error-message-container">
+                        <div id="errorTitle">⚠️ 오류 발생</div>
+                        <div id="errorDescription"></div>
+                        <div id="errorSolutions"></div>
+                        <div><br><button onclick="location.reload()" class="error-reload-button">페이지 새로고침</button></div>
+                    </div>
+                </div>
+                
+                <!-- 성공 메시지 템플릿 -->
+                <div id="successTemplate" class="status-message" style="display: none;">
+                    <div id="successIcon" class="success-emoji">🎉</div>
+                    <div id="successTitle" class="status-ready">성공!</div>
+                    <div id="successDescription" class="status-info"></div>
+                </div>
+                
+                <!-- 카메라 고화질 촬영 완료 템플릿 -->
+                <div id="cameraSuccessTemplate" class="status-message" style="display: none;">
+                    <div style="color: #4caf50; font-weight: 600;">
+                        📸 고화질 촬영 완료!
+                    </div>
+                    <div style="margin-top: 8px;" id="cameraSuccessStats"></div>
+                    <div style="margin-top: 8px; color: #66bb6a; font-size: 0.9rem;">
+                        ✨ 스마트폰 기본 카메라의 최고 화질로 저장되었습니다!<br>
+                        HDR, AI 보정 등 모든 기능이 적용되었습니다.
+                    </div>
+                </div>
+                
+                <!-- 상태 정보 템플릿 -->
+                <div id="statusInfoTemplate" class="status-message" style="display: none;">
+                    <div class="status-info" id="statusInfoText">🔄 로드 중...</div>
+                </div>
+                
+                <!-- 카메라 fallback 템플릿 -->
+                <div id="cameraFallbackTemplate" class="status-message" style="display: none;">
+                    <div style="text-align: center;">
+                        <div>📱 모바일 또는 태블릿에서만 카메라를 사용할 수 있습니다.</div>
+                        <div style="margin-top: 10px; color: #666; font-size: 0.9rem;">
+                            데스크탑에서는 파일 선택 기능을 이용해주세요.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Custom Confirm Modal -->
+    <div id="customConfirmModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="confirmTitle">❓ 확인</h3>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">정말로 실행하시겠습니까?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmCancelBtn" class="modal-btn cancel-btn">취소</button>
+                <button id="confirmOkBtn" class="modal-btn confirm-btn">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 사진 촬영 & 구글 드라이브 업로드 도우미</p>
+    </footer>
+
+    <!-- JavaScript 파일을 먼저 로드 -->
+    <script src="script.js"></script>
+    <!-- 그 다음 Google API 스크립트들 로드 -->
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+</body>
+</html>
