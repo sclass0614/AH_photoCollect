@@ -2,7 +2,7 @@
 const CLIENT_ID = '527801730306-b9ai1utm1gj2m4tvnln77bbf95ffllir.apps.googleusercontent.com';
 const API_KEY = 'AIzaSyBGO2TzEuMmP2X9oUngNRvx-rCb1U-Mjco'; // 실제 사용 시 본인의 API 키로 변경하세요.
 const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive';
 
 // --- Fixed Google Drive Folder ID ---
 const GOOGLE_DRIVE_FOLDER_ID = '1COn0cASn1bci-MqwhsYSUS-pudxSr5lC'; // 실제 사용 시 본인의 폴더 ID로 변경하세요.
@@ -432,13 +432,13 @@ function getFileExtension(filename) {
 
 // --- Upload Logic ---
 async function findFolderByName(parentFolderId, folderName, accessToken) {
-    try {
-        const query = `name='${folderName}' and '${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-        console.log(`폴더 검색 쿼리: ${query}`);
-        const response = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)`, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${accessToken}` }
-        });
+    try {
+        const query = `name='${folderName}' and '${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+        console.log(`폴더 검색 쿼리: ${query}`);
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)&supportsAllDrives=true&includeItemsFromAllDrives=true`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
@@ -460,14 +460,14 @@ async function createFolder(parentFolderId, folderName, accessToken) {
             mimeType: 'application/vnd.google-apps.folder',
             parents: [parentFolderId]
         };
-        const response = await fetch('https://www.googleapis.com/drive/v3/files', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(metadata)
-        });
+                const response = await fetch('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(metadata)
+        });
 
         if (!response.ok) {
             const errorDetails = await response.json().catch(() => ({ error: { message: '알 수 없는 폴더 생성 오류' } }));
@@ -637,11 +637,11 @@ async function uploadSingleFileToDrive(fileObject, targetFileName, parentFolderI
         throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
     }
 
-    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink', { // fields 추가
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${accessToken}` }, // Content-Type은 FormData가 자동으로 설정
-        body: form
-    });
+        const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink&supportsAllDrives=true', { // fields 추가
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${accessToken}` }, // Content-Type은 FormData가 자동으로 설정
+        body: form
+    });
 
     if (!response.ok) {
         const errorDetails = await response.json().catch(() => ({ error: { message: `알 수 없는 서버 오류 (HTTP ${response.status})` } }));
