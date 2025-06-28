@@ -63,12 +63,14 @@ window.onload = () => {
     const day = String(koreanTime.getUTCDate()).padStart(2, '0');
     const formattedKoreanDate = `${year}-${month}-${day}`;
     
-    photoDateInput.value = formattedKoreanDate;
-    
-        initTimeout = setTimeout(() => {
+        photoDateInput.value = formattedKoreanDate;
+    
+    // 초기 버튼 텍스트 설정
+    authorizeButton.textContent = 'Google API 로드 중...';
+    
+        initTimeout = setTimeout(() => {
         if (!gapiInited || !gisInited) {
             console.error('Google API 로드 타임아웃');
-            authorizeButton.style.display = 'block';
             authorizeButton.textContent = '수동으로 Google Drive 로그인 시도';
         }
     }, 10000);
@@ -126,7 +128,6 @@ function checkReadyState() {
         }
         
         console.log('Google API 초기화 완료!');
-        authorizeButton.style.display = 'block';
         authorizeButton.textContent = 'Google Drive 로그인';
         
         // 페이지 로드 시 자동 로그인 시도
@@ -575,7 +576,7 @@ async function handleUploadClick() {
         }
     }
 
-                // 최종 결과 표시
+        // 최종 결과 표시
     console.log(`업로드 완료 (${totalFiles}개 중 ${successCount}개 성공)`);
     
     // 사용자에게 업로드 결과 알림
@@ -592,16 +593,16 @@ async function handleUploadClick() {
         console.log(failMessage);
         showUploadResultModal("업로드 실패", failMessage, false);
     }
-    
-    if (successCount > 0 && errorCount === 0) { // 모든 파일 성공 시에만 초기화
-        capturedPhotos = [];
-        updateImagePreview();
-        fileInput.value = ''; // 파일 선택 input도 초기화
+    
+    if (successCount > 0 && errorCount === 0) { // 모든 파일 성공 시에만 초기화
+        capturedPhotos = [];
+        updateImagePreview();
+        fileInput.value = ''; // 파일 선택 input도 초기화
         fileNameInput.value = ''; // 파일명 input도 초기화
-    }
-    
-    appContent.classList.remove('loading');
-    uploadButton.disabled = false;
+    }
+    
+    appContent.classList.remove('loading');
+    uploadButton.disabled = false;
 }
 
 async function uploadSingleFileToDrive(fileObject, targetFileName, parentFolderId, accessToken) {
@@ -718,7 +719,8 @@ function attemptAutoLogin() {
     }
 }
 
-async function checkTokenValidity() {
+// 토큰 유효성 검사 함수 - 현재 사용되지 않음
+/* async function checkTokenValidity() {
     const token = gapi.client.getToken();
     if (!token || !token.access_token) {
         return false;
@@ -743,7 +745,7 @@ async function checkTokenValidity() {
         console.error('토큰 유효성 검사 오류:', error);
         return false;
     }
-}
+} */
 
 // --- Login Check Functions ---
 function checkLoginAndPrompt(actionName = "이 기능을 사용") {
@@ -825,17 +827,17 @@ function showCustomConfirm(title, message, onConfirm, onCancel = null) {
             return;
         }
         
-                        titleElement.textContent = title;
+        titleElement.textContent = title;
         messageElement.innerHTML = message.replace(/\n/g, '<br>'); // 개행문자 처리
-        
-        modal.style.display = 'flex';
-        
+        
+        modal.style.display = 'flex';
+        
         // 이벤트 리스너 중복 방지를 위해 기존 리스너 제거 후 새로 할당 (cloneNode 방식 사용)
-        const newConfirmBtn = confirmBtn.cloneNode(true);
-        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-        
-        const newCancelBtn = cancelBtn.cloneNode(true);
-        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
         
         // 취소 버튼 표시/숨김 처리
         if (onCancel === null) {

@@ -125,8 +125,8 @@ main {
     z-index: 2;
 }
 
-/* 공통 카드 스타일 */
-.card {
+/* 공통 카드 스타일 - 사용되지 않음 */
+/* .card {
     background: rgba(255, 255, 248, 0.95);
     backdrop-filter: blur(10px);
     border-radius: 20px;
@@ -140,7 +140,7 @@ main {
 .card:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 40px rgba(129, 199, 132, 0.25);
-}
+} */
 
 
 
