@@ -128,6 +128,9 @@ function checkReadyState() {
         console.log('Google API 초기화 완료!');
         authorizeButton.style.display = 'block';
         authorizeButton.textContent = 'Google Drive 로그인';
+        
+        // 페이지 로드 시 자동 로그인 시도
+        attemptAutoLogin();
     } else {
         const loadingParts = [];
         if (!gapiInited) loadingParts.push('Drive API');
@@ -250,7 +253,9 @@ function handleAuthClick() {
         if (!tokenClient) {
             throw new Error('토큰 클라이언트가 초기화되지 않았습니다.');
         }
-        tokenClient.requestAccessToken({prompt: ''}); // prompt: '' 는 자동 로그인을 시도 (만약 이미 로그인 및 승인된 경우)
+        // 수동 로그인 시에는 consent 화면을 표시 (prompt: 'consent')
+        // 하지만 이미 승인된 경우에는 자동으로 진행 (prompt: 'select_account')
+        tokenClient.requestAccessToken({prompt: 'select_account'});
     } catch (error) {
         console.error('로그인 시도 오류:', error);
     }
@@ -267,6 +272,7 @@ function handleSignoutClick() {
             console.log('로그아웃 완료 및 토큰 해지됨');
         });
     } else {
+        updateSigninStatus(false);
         console.log('이미 로그아웃된 상태입니다.');
     }
 }
@@ -276,6 +282,13 @@ function tokenResponseCallback(resp) {
     
     if (resp.error) {
         console.error('토큰 응답 오류:', resp.error, resp);
+        
+        // 자동 로그인 진행 중이었다면 버튼 상태 복구
+        if (authorizeButton.disabled) {
+            authorizeButton.textContent = 'Google Drive 로그인';
+            authorizeButton.disabled = false;
+        }
+        
         updateSigninStatus(false);
         return;
     }
@@ -283,11 +296,28 @@ function tokenResponseCallback(resp) {
     // access_token이 실제로 있는지 확인
     if (gapi.client.getToken() && gapi.client.getToken().access_token) {
         console.log('액세스 토큰 설정 확인됨:', gapi.client.getToken());
+        
+        // 로그인 상태를 localStorage에 저장
+        localStorage.setItem('googleDriveLoggedIn', 'true');
+        localStorage.setItem('lastLoginTime', Date.now().toString());
+        
         updateSigninStatus(true);
-        console.log('로그인 성공!');
+        console.log('로그인 성공! (상태 저장됨)');
+        
+        // 자동 로그인 진행 중이었다면 버튼 상태 복구
+        if (authorizeButton.disabled) {
+            authorizeButton.disabled = false;
+        }
     } else {
         // 간혹 콜백은 성공했으나 토큰이 바로 설정되지 않는 경우가 있을 수 있음 (이론상)
         console.error('토큰 응답은 성공적이었으나, gapi.client에 토큰이 설정되지 않았습니다.');
+        
+        // 자동 로그인 진행 중이었다면 버튼 상태 복구
+        if (authorizeButton.disabled) {
+            authorizeButton.textContent = 'Google Drive 로그인';
+            authorizeButton.disabled = false;
+        }
+        
         updateSigninStatus(false);
     }
 }
@@ -301,6 +331,11 @@ function updateSigninStatus(isSignedIn) {
     } else {
         authorizeButton.style.display = 'block';
         signoutButton.style.display = 'none';
+        
+        // 로그아웃 시 localStorage 상태 제거
+        localStorage.removeItem('googleDriveLoggedIn');
+        localStorage.removeItem('lastLoginTime');
+        
         // 로그아웃 시 미리보기 정리
         capturedPhotos = [];
         updateImagePreview();
@@ -636,6 +671,80 @@ function showUploadResultModal(title, message, isSuccess) {
 }
 
 
+// --- Auto Login Functions ---
+function attemptAutoLogin() {
+    const wasLoggedIn = localStorage.getItem('googleDriveLoggedIn') === 'true';
+    const lastLoginTime = localStorage.getItem('lastLoginTime');
+    
+    if (!wasLoggedIn) {
+        console.log('이전 로그인 기록이 없습니다.');
+        return;
+    }
+    
+    // 마지막 로그인으로부터 7일이 지났으면 자동 로그인 시도하지 않음
+    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    if (lastLoginTime && parseInt(lastLoginTime) < sevenDaysAgo) {
+        console.log('마지막 로그인이 너무 오래되어 자동 로그인을 시도하지 않습니다.');
+        localStorage.removeItem('googleDriveLoggedIn');
+        localStorage.removeItem('lastLoginTime');
+        return;
+    }
+    
+    console.log('🔄 자동 로그인 시도 중...');
+    
+    // 로그인 버튼에 상태 표시
+    authorizeButton.textContent = '자동 로그인 중...';
+    authorizeButton.disabled = true;
+    
+    try {
+        // 자동 로그인 시도 (prompt: '' 는 이미 승인된 경우 자동으로 토큰 받기)
+        tokenClient.requestAccessToken({prompt: ''});
+        
+        // 3초 후에도 로그인이 안되면 원래 상태로 복구
+        setTimeout(() => {
+            if (authorizeButton.disabled) {
+                authorizeButton.textContent = 'Google Drive 로그인';
+                authorizeButton.disabled = false;
+                console.log('자동 로그인 시간 초과');
+            }
+        }, 3000);
+        
+    } catch (error) {
+        console.error('자동 로그인 실패:', error);
+        localStorage.removeItem('googleDriveLoggedIn');
+        localStorage.removeItem('lastLoginTime');
+        authorizeButton.textContent = 'Google Drive 로그인';
+        authorizeButton.disabled = false;
+    }
+}
+
+async function checkTokenValidity() {
+    const token = gapi.client.getToken();
+    if (!token || !token.access_token) {
+        return false;
+    }
+    
+    try {
+        // Google Drive API를 사용해서 토큰이 유효한지 확인
+        const response = await fetch('https://www.googleapis.com/drive/v3/about?fields=user', {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token.access_token}` }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('토큰 유효성 확인됨. 사용자:', data.user?.emailAddress);
+            return true;
+        } else {
+            console.log('토큰이 유효하지 않습니다.');
+            return false;
+        }
+    } catch (error) {
+        console.error('토큰 유효성 검사 오류:', error);
+        return false;
+    }
+}
+
 // --- Login Check Functions ---
 function checkLoginAndPrompt(actionName = "이 기능을 사용") {
     const tokenObject = gapi.client.getToken();
@@ -643,6 +752,10 @@ function checkLoginAndPrompt(actionName = "이 기능을 사용") {
         showLoginRequiredModal(actionName);
         return false;
     }
+    
+    // 로그인 상태 시간 업데이트 (활동 중임을 표시)
+    localStorage.setItem('lastLoginTime', Date.now().toString());
+    
     return true;
 }
 
