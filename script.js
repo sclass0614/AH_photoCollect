@@ -140,7 +140,7 @@ function checkReadyState() {
 // --- Smart Camera Functions (모바일/태블릿 전용) ---
 function startSmartCapture() {
     // 로그인 체크
-    if (!checkLoginAndPrompt("카메라로 사진을 촬영")) {
+    if (!checkLoginAndPrompt("이 기능을 사용")) {
         return;
     }
     
@@ -201,7 +201,7 @@ function handleNativeCameraPhotos(event) {
 
 function clearAllPhotos() {
     // 로그인 체크
-    if (!checkLoginAndPrompt("촬영된 사진을 삭제")) {
+    if (!checkLoginAndPrompt("이 기능을 사용")) {
         return;
     }
     
@@ -455,6 +455,11 @@ async function findOrCreateDateFolder(parentFolderId, dateString, accessToken) {
 }
 
 async function handleUploadClick() {
+    // 로그인 체크
+    if (!checkLoginAndPrompt("이 기능을 사용")) {
+        return;
+    }
+
     if (!GOOGLE_DRIVE_FOLDER_ID) {
         console.error('CRITICAL ERROR: GOOGLE_DRIVE_FOLDER_ID is not set in the script.');
         return;
@@ -479,10 +484,6 @@ async function handleUploadClick() {
     }
 
     const tokenObject = gapi.client.getToken();
-    if (!tokenObject || !tokenObject.access_token) {
-        console.log('Google Drive 로그인이 필요합니다. 먼저 로그인해주세요.');
-        return;
-    }
 
     const formattedDateForFolderName = formatDateToYYYYMMDD(photoDate);
     const formattedDateForFileName = formatDateToYYYYMMDD(photoDate); // 파일명용 날짜 (동일하게 사용)
@@ -503,6 +504,7 @@ async function handleUploadClick() {
         console.log(`날짜 폴더 준비 완료. ${formattedDateForFolderName} 폴더에 업로드합니다.`);
     } catch (error) {
         console.error('업로드 중 날짜 폴더 처리 실패:', error);
+        showUploadResultModal("업로드 실패", `❌ 폴더 생성 실패\n업로드 중 오류가 발생했습니다.\n${error.message}`, false);
         appContent.classList.remove('loading');
         uploadButton.disabled = false;
         return;
@@ -538,22 +540,33 @@ async function handleUploadClick() {
         }
     }
 
-        // 최종 결과 표시
+                // 최종 결과 표시
     console.log(`업로드 완료 (${totalFiles}개 중 ${successCount}개 성공)`);
+    
+    // 사용자에게 업로드 결과 알림
     if (successCount === totalFiles) {
-        console.log(`🎉 업로드 완료! ${successCount}개 사진이 '${formattedDateForFolderName}' 폴더에 성공적으로 업로드되었습니다.`);
+        const successMessage = `🎉 업로드 성공!\n${successCount}개 사진이 '${formattedDateForFolderName}' 폴더에 성공적으로 업로드되었습니다.`;
+        console.log(successMessage);
+        showUploadResultModal("업로드 성공", successMessage, true);
+    } else if (successCount > 0) {
+        const partialMessage = `⚠️ 일부 업로드 완료\n성공: ${successCount}개\n실패: ${errorCount}개\n폴더: '${formattedDateForFolderName}'`;
+        console.log(partialMessage);
+        showUploadResultModal("일부 업로드 완료", partialMessage, true);
     } else {
-        console.log(`⚠️ 일부 업로드 완료: 성공 ${successCount}개, 실패 ${errorCount}개 (대상 폴더: '${formattedDateForFolderName}')`);
+        const failMessage = `❌ 업로드 실패\n모든 파일 업로드에 실패했습니다.\n다시 시도해주세요.`;
+        console.log(failMessage);
+        showUploadResultModal("업로드 실패", failMessage, false);
     }
-    
-    if (successCount > 0 && errorCount === 0) { // 모든 파일 성공 시에만 초기화
-        capturedPhotos = [];
-        updateImagePreview();
-        fileInput.value = ''; // 파일 선택 input도 초기화
-    }
-    
-    appContent.classList.remove('loading');
-    uploadButton.disabled = false;
+    
+    if (successCount > 0 && errorCount === 0) { // 모든 파일 성공 시에만 초기화
+        capturedPhotos = [];
+        updateImagePreview();
+        fileInput.value = ''; // 파일 선택 input도 초기화
+        fileNameInput.value = ''; // 파일명 input도 초기화
+    }
+    
+    appContent.classList.remove('loading');
+    uploadButton.disabled = false;
 }
 
 async function uploadSingleFileToDrive(fileObject, targetFileName, parentFolderId, accessToken) {
@@ -610,6 +623,17 @@ function formatCurrentTimeToYYMMDDHHNNSS() {
 
 
 // --- Status Message Functions ---
+function showUploadResultModal(title, message, isSuccess) {
+    showCustomConfirm(
+        title,
+        message,
+        () => {
+            // 확인 버튼 클릭 시 실행할 동작 (없음)
+            console.log(`업로드 결과 모달 닫힘: ${title}`);
+        },
+        null // 취소 버튼 비활성화
+    );
+}
 
 
 // --- Login Check Functions ---
@@ -688,17 +712,24 @@ function showCustomConfirm(title, message, onConfirm, onCancel = null) {
             return;
         }
         
-        titleElement.textContent = title;
-        messageElement.textContent = message.replace(/\n/g, '<br>'); // 개행문자 처리
-        
-        modal.style.display = 'flex';
-        
+                        titleElement.textContent = title;
+        messageElement.innerHTML = message.replace(/\n/g, '<br>'); // 개행문자 처리
+        
+        modal.style.display = 'flex';
+        
         // 이벤트 리스너 중복 방지를 위해 기존 리스너 제거 후 새로 할당 (cloneNode 방식 사용)
-        const newConfirmBtn = confirmBtn.cloneNode(true);
-        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-        
-        const newCancelBtn = cancelBtn.cloneNode(true);
-        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        
+        // 취소 버튼 표시/숨김 처리
+        if (onCancel === null) {
+            newCancelBtn.style.display = 'none';
+        } else {
+            newCancelBtn.style.display = 'block';
+        }
 
         const closeAndResolve = (result) => {
             modal.style.display = 'none';

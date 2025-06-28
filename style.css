@@ -376,7 +376,6 @@ button:disabled {
     box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
     color: white;
     font-weight: 700;
-    font-size: 1.1rem;
 }
 
 
@@ -834,15 +833,15 @@ footer {
     }
     
     .preview-header #clearPhotosButton {
-        padding: 6px 12px;
-        font-size: 0.75rem;
+        padding: 10px 16px;
+        font-size: 0.9rem;
         width: auto;
         min-width: auto;
     }
     
     .camera-header #smartCameraButton {
-        padding: 6px 12px;
-        font-size: 0.75rem;
+        padding: 10px 16px;
+        font-size: 0.9rem;
         width: auto;
         min-width: auto;
     }
@@ -881,8 +880,8 @@ footer {
     }
     
     .preview-header #clearPhotosButton {
-        padding: 6px 10px;
-        font-size: 0.7rem;
+        padding: 8px 14px;
+        font-size: 0.8rem;
         width: 100%;
         min-width: auto;
     }
@@ -894,8 +893,8 @@ footer {
     }
     
     .camera-header #smartCameraButton {
-        padding: 6px 10px;
-        font-size: 0.7rem;
+        padding: 8px 14px;
+        font-size: 0.8rem;
         width: 100%;
         min-width: auto;
     }
