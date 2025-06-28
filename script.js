@@ -16,14 +16,6 @@ const fileNameInput = document.getElementById('fileName');
 const photoDateInput = document.getElementById('photoDate');
 const uploadButton = document.getElementById('uploadButton');
 const imagePreviewContainer = document.getElementById('imagePreviewContainer');
-const uploadStatus = document.getElementById('uploadStatus');
-
-// 상태 메시지 DOM 요소들
-const apiLoadingMsg = document.getElementById('apiLoading');
-const apiReadyMsg = document.getElementById('apiReady');
-const loginSuccessMsg = document.getElementById('loginSuccess');
-const uploadProgressMsg = document.getElementById('uploadProgress');
-const generalMessageMsg = document.getElementById('generalMessage');
 
 // 카메라 관련 DOM 요소 (모바일/태블릿 전용)
 const smartCameraButton = document.getElementById('smartCameraButton');
@@ -54,13 +46,10 @@ window.onload = () => {
     
     
 
-    if (!GOOGLE_DRIVE_FOLDER_ID) {
-        showGeneralMessage('오류: 대상 Google Drive 폴더 ID가 코드에 설정되지 않았습니다. 개발자에게 문의하세요.');
-        console.error('CRITICAL ERROR: GOOGLE_DRIVE_FOLDER_ID is not set in the script.');
-        if(uploadButton) uploadButton.disabled = true;
-    } else {
-        showApiLoading();
-    }
+        if (!GOOGLE_DRIVE_FOLDER_ID) {
+        console.error('CRITICAL ERROR: GOOGLE_DRIVE_FOLDER_ID is not set in the script.');
+        if(uploadButton) uploadButton.disabled = true;
+    }
     
                 // 한국 시간대로 오늘 날짜 설정
     const now = new Date();
@@ -76,29 +65,19 @@ window.onload = () => {
     
     photoDateInput.value = formattedKoreanDate;
     
-    initTimeout = setTimeout(() => {
-        if (!gapiInited || !gisInited) {
-            console.error('Google API 로드 타임아웃');
-                        showErrorMessage(
-                '⚠️ Google API 로드에 실패했습니다.',
-                '',
-                [
-                    '인터넷 연결을 확인해주세요',
-                    '페이지를 새로고침해보세요 (F5 또는 Ctrl+R)',
-                    '브라우저의 확장 프로그램이나 광고 차단기가 방해할 수 있습니다'
-                ]
-            );
-            authorizeButton.style.display = 'block';
-            authorizeButton.textContent = '수동으로 Google Drive 로그인 시도';
-        }
-    }, 10000);
+        initTimeout = setTimeout(() => {
+        if (!gapiInited || !gisInited) {
+            console.error('Google API 로드 타임아웃');
+            authorizeButton.style.display = 'block';
+            authorizeButton.textContent = '수동으로 Google Drive 로그인 시도';
+        }
+    }, 10000);
 };
 
 // --- Google API Functions ---
 function gapiLoaded() {
-    console.log('GAPI 스크립트 로드됨');
-    showApiLoading();
-    gapi.load('client', initializeGapiClient);
+    console.log('GAPI 스크립트 로드됨');
+    gapi.load('client', initializeGapiClient);
 }
 
 function gisLoaded() {
@@ -112,69 +91,59 @@ function gisLoaded() {
         gisInited = true;
         console.log('GIS 초기화 완료');
         checkReadyState();
-    } catch (error) {
-        console.error('GIS 초기화 오류:', error);
-        showGeneralMessage(`인증 시스템 초기화 오류: ${error.message}`);
-    }
+        } catch (error) {
+        console.error('GIS 초기화 오류:', error);
+    }
 }
 
 window.gapiLoaded = gapiLoaded;
 window.gisLoaded = gisLoaded;
 
 async function initializeGapiClient() {
-    try {
-        console.log('GAPI 클라이언트 초기화 시작');
-        showApiLoading();
-        
-        await gapi.client.init({
-            apiKey: API_KEY,
-            discoveryDocs: DISCOVERY_DOCS,
-        });
-        
-        gapiInited = true;
-        console.log('GAPI 클라이언트 초기화 완료');
-        checkReadyState();
-    } catch (error) {
-        console.error("GAPI 클라이언트 초기화 오류:", error);
-                showErrorMessage(
-            '❌ Google Drive API 초기화 오류',
-            error.message,
-            [
-                '인터넷 연결 확인',
-                '페이지 새로고침',
-                '다른 브라우저에서 시도'
-            ]
-        );
-    }
+    try {
+        console.log('GAPI 클라이언트 초기화 시작');
+        
+        await gapi.client.init({
+            apiKey: API_KEY,
+            discoveryDocs: DISCOVERY_DOCS,
+        });
+        
+        gapiInited = true;
+        console.log('GAPI 클라이언트 초기화 완료');
+        checkReadyState();
+    } catch (error) {
+        console.error("GAPI 클라이언트 초기화 오류:", error);
+    }
 }
 
 function checkReadyState() {
-    console.log(`상태 체크: GAPI=${gapiInited}, GIS=${gisInited}`);
-    
-    if (gapiInited && gisInited) {
-        if (initTimeout) {
-            clearTimeout(initTimeout);
-            initTimeout = null;
-        }
-        
-        console.log('Google API 초기화 완료!');
-        authorizeButton.style.display = 'block';
-        authorizeButton.textContent = 'Google Drive 로그인';
-        
-        if (GOOGLE_DRIVE_FOLDER_ID) {
-            showApiReady();
-        }
-    } else {
-        const loadingParts = [];
-        if (!gapiInited) loadingParts.push('Drive API');
-        if (!gisInited) loadingParts.push('인증 시스템');
-        
-                showStatusInfo(`🔄 ${loadingParts.join(', ')} 로드 중... (${loadingParts.length}/2)`);
-    }
+    console.log(`상태 체크: GAPI=${gapiInited}, GIS=${gisInited}`);
+    
+    if (gapiInited && gisInited) {
+        if (initTimeout) {
+            clearTimeout(initTimeout);
+            initTimeout = null;
+        }
+        
+        console.log('Google API 초기화 완료!');
+        authorizeButton.style.display = 'block';
+        authorizeButton.textContent = 'Google Drive 로그인';
+    } else {
+        const loadingParts = [];
+        if (!gapiInited) loadingParts.push('Drive API');
+        if (!gisInited) loadingParts.push('인증 시스템');
+        
+        console.log(`🔄 ${loadingParts.join(', ')} 로드 중... (${loadingParts.length}/2)`);
+    }
 }
 
 // --- Smart Camera Functions (모바일/태블릿 전용) ---
 function startSmartCapture() {
+    // 로그인 체크
+    if (!checkLoginAndPrompt("카메라로 사진을 촬영")) {
+        return;
+    }
+    
     const userAgent = navigator.userAgent;
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
     const isTablet = /iPad/i.test(userAgent) || 
@@ -186,12 +155,12 @@ function startSmartCapture() {
     
     // 데스크탑에서는 파일 선택 안내
     if (!isMobileOrTablet) {
-        showCameraFallback();
+        console.log('📱 모바일 또는 태블릿에서만 카메라를 사용할 수 있습니다.');
         return;
     }
     
     // 모바일/태블릿에서만 카메라 사용 가능
-    showGeneralMessage(`📱 ${deviceType}에서 기본 카메라 앱을 여는 중...`);
+    console.log(`📱 ${deviceType}에서 기본 카메라 앱을 여는 중...`);
     
     // 기본 카메라 앱 실행
     nativeCameraInput.click();
@@ -201,14 +170,14 @@ function handleNativeCameraPhotos(event) {
     const files = Array.from(event.target.files);
     
     if (files.length === 0) {
-        showGeneralMessage('사진이 선택되지 않았습니다.');
+        console.log('사진이 선택되지 않았습니다.');
         return;
     }
     
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
     
     if (imageFiles.length === 0) {
-        showGeneralMessage('이미지 파일이 없습니다. 다시 촬영해주세요.');
+        console.log('이미지 파일이 없습니다. 다시 촬영해주세요.');
         return;
     }
     
@@ -220,7 +189,7 @@ function handleNativeCameraPhotos(event) {
     const totalSize = imageFiles.reduce((sum, file) => sum + file.size, 0);
     const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
     
-    showCameraSuccessMessage(photoCount, capturedPhotos.length, totalSizeMB);
+    console.log(`📸 고화질 촬영 완료! ${photoCount}장 촬영됨 (총 ${totalSizeMB}MB)`);
     
     // 파일 입력 필드 초기화 (같은 파일을 다시 선택할 수 있도록)
     nativeCameraInput.value = '';
@@ -231,123 +200,111 @@ function handleNativeCameraPhotos(event) {
 
 
 function clearAllPhotos() {
-    if (capturedPhotos.length === 0) {
-        showGeneralMessage('삭제할 사진이 없습니다.');
-        return;
-    }
-    
-    showCustomConfirm(
-        '🗑️ 모든 사진 삭제',
-        `총 ${capturedPhotos.length}장의 사진을 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`,
-        () => {
-            capturedPhotos = [];
-            updateImagePreview();
-            showGeneralMessage('모든 사진이 삭제되었습니다.');
-        },
-        () => {
-            showGeneralMessage('삭제가 취소되었습니다.');
-        }
-    );
+    // 로그인 체크
+    if (!checkLoginAndPrompt("촬영된 사진을 삭제")) {
+        return;
+    }
+    
+    if (capturedPhotos.length === 0) {
+        console.log('삭제할 사진이 없습니다.');
+        return;
+    }
+    
+    showCustomConfirm(
+        '🗑️ 모든 사진 삭제',
+        `총 ${capturedPhotos.length}장의 사진을 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`,
+        () => {
+            capturedPhotos = [];
+            updateImagePreview();
+            console.log('모든 사진이 삭제되었습니다.');
+        },
+        () => {
+            console.log('삭제가 취소되었습니다.');
+        }
+    );
 }
 
 function removePhoto(index) {
     const fileName = capturedPhotos[index]?.name || `사진 ${index + 1}`;
     
-    showCustomConfirm(
-        '🗑️ 사진 삭제',
-        `"${fileName}"을(를) 삭제하시겠습니까?`,
-        () => {
-            capturedPhotos.splice(index, 1);
-            updateImagePreview();
-            showGeneralMessage(`사진이 삭제되었습니다. (남은 사진: ${capturedPhotos.length}장)`);
-        },
-        () => {
-            showGeneralMessage('삭제가 취소되었습니다.');
-        }
-    );
+        showCustomConfirm(
+        '🗑️ 사진 삭제',
+        `"${fileName}"을(를) 삭제하시겠습니까?`,
+        () => {
+            capturedPhotos.splice(index, 1);
+            updateImagePreview();
+            console.log(`사진이 삭제되었습니다. (남은 사진: ${capturedPhotos.length}장)`);
+        },
+        () => {
+            console.log('삭제가 취소되었습니다.');
+        }
+    );
 }
 
 // --- Authentication ---
 function handleAuthClick() {
-    console.log('로그인 버튼 클릭됨');
-    showGeneralMessage('Google 로그인 창을 여는 중...');
-    
-    try {
-        if (!tokenClient) {
-            throw new Error('토큰 클라이언트가 초기화되지 않았습니다.');
-        }
-        tokenClient.requestAccessToken({prompt: ''}); // prompt: '' 는 자동 로그인을 시도 (만약 이미 로그인 및 승인된 경우)
-    } catch (error) {
-        console.error('로그인 시도 오류:', error);
-                showErrorMessage(
-            '❌ 로그인 오류',
-            error.message,
-            ['페이지 새로고침 후 다시 시도']
-        );
-    }
+    console.log('로그인 버튼 클릭됨');
+    console.log('Google 로그인 창을 여는 중...');
+    
+    try {
+        if (!tokenClient) {
+            throw new Error('토큰 클라이언트가 초기화되지 않았습니다.');
+        }
+        tokenClient.requestAccessToken({prompt: ''}); // prompt: '' 는 자동 로그인을 시도 (만약 이미 로그인 및 승인된 경우)
+    } catch (error) {
+        console.error('로그인 시도 오류:', error);
+    }
 }
 
 function handleSignoutClick() {
-    const token = gapi.client.getToken();
-    if (token !== null) {
-        showGeneralMessage('로그아웃 중...');
-        google.accounts.oauth2.revoke(token.access_token, () => {
-            gapi.client.setToken('');
-            updateSigninStatus(false);
-            showGeneralMessage('로그아웃되었습니다.');
+    const token = gapi.client.getToken();
+    if (token !== null) {
+        console.log('로그아웃 중...');
+        google.accounts.oauth2.revoke(token.access_token, () => {
+            gapi.client.setToken('');
+            updateSigninStatus(false);
+            console.log('로그아웃되었습니다.');
             console.log('로그아웃 완료 및 토큰 해지됨');
-        });
-    } else {
-        showGeneralMessage('이미 로그아웃된 상태입니다.');
+        });
+    } else {
+        console.log('이미 로그아웃된 상태입니다.');
     }
 }
 
 function tokenResponseCallback(resp) {
-    console.log('토큰 응답 수신:', resp);
-    
-    if (resp.error) {
-        console.error('토큰 응답 오류:', resp.error, resp);
-                showErrorMessage(
-            '❌ 인증 오류',
-            `${resp.error_description || resp.error}`,
-            ['팝업이 차단되었거나 서드파티 쿠키 문제일 수 있습니다. 다시 시도해주세요.']
-        );
-        updateSigninStatus(false);
-        return;
-    }
+    console.log('토큰 응답 수신:', resp);
+    
+    if (resp.error) {
+        console.error('토큰 응답 오류:', resp.error, resp);
+        updateSigninStatus(false);
+        return;
+    }
     // gapi.client.setToken()은 GIS 라이브러리가 자동으로 처리해줍니다.
     // access_token이 실제로 있는지 확인
     if (gapi.client.getToken() && gapi.client.getToken().access_token) {
         console.log('액세스 토큰 설정 확인됨:', gapi.client.getToken());
-        updateSigninStatus(true);
-        showLoginSuccess();
+        updateSigninStatus(true);
+        console.log('로그인 성공!');
     } else {
         // 간혹 콜백은 성공했으나 토큰이 바로 설정되지 않는 경우가 있을 수 있음 (이론상)
         console.error('토큰 응답은 성공적이었으나, gapi.client에 토큰이 설정되지 않았습니다.');
-                showErrorMessage(
-            '⚠️ 인증 후 토큰 설정 문제',
-            '인증 후 토큰 설정에 문제가 발생했습니다.',
-            ['페이지를 새로고침하거나 다시 로그인해주세요.']
-        );
         updateSigninStatus(false);
     }
 }
 
 function updateSigninStatus(isSignedIn) {
-    console.log('로그인 상태 업데이트:', isSignedIn);
-    
-    if (isSignedIn) {
-        authorizeButton.style.display = 'none';
-        signoutButton.style.display = 'block';
-        appContent.style.display = 'block';
-    } else {
-        authorizeButton.style.display = 'block';
-        signoutButton.style.display = 'none';
-        appContent.style.display = 'none';
+    console.log('로그인 상태 업데이트:', isSignedIn);
+    
+    if (isSignedIn) {
+        authorizeButton.style.display = 'none';
+        signoutButton.style.display = 'block';
+    } else {
+        authorizeButton.style.display = 'block';
+        signoutButton.style.display = 'none';
         // 로그아웃 시 미리보기 정리
         capturedPhotos = [];
         updateImagePreview();
-    }
+    }
 }
 
 // --- File Handling and Preview ---
@@ -363,20 +320,15 @@ function handleFilePreview(event) {
         }
     });
 
-    if (newPhotos.length === 0 && files.length > 0) {
-        showGeneralMessage('선택된 파일 중에 이미지 파일이 없습니다.');
+        if (newPhotos.length === 0 && files.length > 0) {
+        console.log('선택된 파일 중에 이미지 파일이 없습니다.');
         return;
     }
-    
-    capturedPhotos.push(...newPhotos);
-    updateImagePreview();
-    
-    let statusMsg = '';
-    if (GOOGLE_DRIVE_FOLDER_ID && gapi.client.getToken()) { // 로그인 상태도 확인
-        statusMsg = `파일 업로드 시 '${GOOGLE_DRIVE_FOLDER_ID}' 폴더로 저장됩니다.\n`;
-    }
-    statusMsg += `총 ${capturedPhotos.length}개의 사진이 준비되었습니다.`;
-    showGeneralMessage(statusMsg);
+    
+    capturedPhotos.push(...newPhotos);
+    updateImagePreview();
+    
+    console.log(`총 ${capturedPhotos.length}개의 사진이 준비되었습니다.`);
 }
 
 function updateImagePreview() {
@@ -504,7 +456,7 @@ async function findOrCreateDateFolder(parentFolderId, dateString, accessToken) {
 
 async function handleUploadClick() {
     if (!GOOGLE_DRIVE_FOLDER_ID) {
-        showGeneralMessage('오류: 대상 Google Drive 폴더 ID가 설정되지 않았습니다. 개발자에게 문의하세요.');
+        console.error('CRITICAL ERROR: GOOGLE_DRIVE_FOLDER_ID is not set in the script.');
         return;
     }
 
@@ -512,23 +464,23 @@ async function handleUploadClick() {
     const baseFileName = fileNameInput.value.trim();
 
     if (capturedPhotos.length === 0) {
-        showGeneralMessage('업로드할 사진이 없습니다. 먼저 사진을 촬영하거나 선택해주세요.');
+        console.log('업로드할 사진이 없습니다. 먼저 사진을 촬영하거나 선택해주세요.');
         return;
     }
     if (!photoDate) {
-        showGeneralMessage('촬영 날짜를 입력해주세요.');
+        console.log('촬영 날짜를 입력해주세요.');
         photoDateInput.focus();
         return;
     }
     if (!baseFileName) {
-        showGeneralMessage('파일명을 입력해주세요.');
+        console.log('파일명을 입력해주세요.');
         fileNameInput.focus();
         return;
     }
 
     const tokenObject = gapi.client.getToken();
     if (!tokenObject || !tokenObject.access_token) {
-        showGeneralMessage('Google Drive 로그인이 필요합니다. 먼저 로그인해주세요.');
+        console.log('Google Drive 로그인이 필요합니다. 먼저 로그인해주세요.');
         return;
     }
 
@@ -536,30 +488,25 @@ async function handleUploadClick() {
     const formattedDateForFileName = formatDateToYYYYMMDD(photoDate); // 파일명용 날짜 (동일하게 사용)
     const uploadTimeForFileName = formatCurrentTimeToYYMMDDHHNNSS();
 
-    showUploadProgress(`${capturedPhotos.length}개 사진 업로드 준비 중...`, `폴더 및 파일명 설정 중...`);
-    appContent.classList.add('loading');
-    uploadButton.disabled = true;
+        console.log(`${capturedPhotos.length}개 사진 업로드 준비 중...`);
+    appContent.classList.add('loading');
+    uploadButton.disabled = true;
 
-    let successCount = 0;
-    let errorCount = 0;
+    let successCount = 0;
+    let errorCount = 0;
     const totalFiles = capturedPhotos.length;
 
-    let targetFolderId;
-    try {
-        showUploadProgress('날짜 폴더 확인 중...', `${formattedDateForFolderName} 폴더를 찾거나 생성합니다...`);
-        targetFolderId = await findOrCreateDateFolder(GOOGLE_DRIVE_FOLDER_ID, photoDate, tokenObject.access_token);
-        showUploadProgress('날짜 폴더 준비 완료', `${formattedDateForFolderName} 폴더에 업로드합니다.`);
-    } catch (error) {
-        console.error('업로드 중 날짜 폴더 처리 실패:', error);
-                showErrorMessage(
-            '📁 날짜 폴더 생성/확인 실패',
-            `오류: ${error.message}. 업로드를 중단합니다.`,
-            []
-        );
-        appContent.classList.remove('loading');
-        uploadButton.disabled = false;
-        return;
-    }
+    let targetFolderId;
+    try {
+        console.log(`날짜 폴더 확인 중... ${formattedDateForFolderName} 폴더를 찾거나 생성합니다...`);
+        targetFolderId = await findOrCreateDateFolder(GOOGLE_DRIVE_FOLDER_ID, photoDate, tokenObject.access_token);
+        console.log(`날짜 폴더 준비 완료. ${formattedDateForFolderName} 폴더에 업로드합니다.`);
+    } catch (error) {
+        console.error('업로드 중 날짜 폴더 처리 실패:', error);
+        appContent.classList.remove('loading');
+        uploadButton.disabled = false;
+        return;
+    }
 
     for (let i = 0; i < totalFiles; i++) {
         const file = capturedPhotos[i];
@@ -572,10 +519,7 @@ async function handleUploadClick() {
             finalName += originalExtension;
         }
         
-        showUploadProgress(
-            `업로드 중: ${i + 1} / ${totalFiles}`,
-            `파일: ${finalName}<br>진행률: ${((i / totalFiles) * 100).toFixed(0)}%`
-        );
+                console.log(`업로드 중: ${i + 1} / ${totalFiles} - ${finalName} (진행률: ${((i / totalFiles) * 100).toFixed(0)}%)`);
         
         try {
             console.log(`%c[파일 업로드 시작 ${i+1}/${totalFiles}]`, "font-weight:bold;", `이름: ${finalName}, 대상 폴더 ID: ${targetFolderId}`);
@@ -594,21 +538,12 @@ async function handleUploadClick() {
         }
     }
 
-    // 최종 결과 표시
-    showUploadProgress(`업로드 완료 (${totalFiles}개 중 ${successCount}개 성공)`, `최종 결과 확인 중...`);
-        if (successCount === totalFiles) {
-        showSuccessMessage(
-            '업로드 완료!',
-            `${successCount}개 사진이 '${formattedDateForFolderName}' 폴더에 성공적으로 업로드되었습니다.`,
-            '🎉'
-        );
+        // 최종 결과 표시
+    console.log(`업로드 완료 (${totalFiles}개 중 ${successCount}개 성공)`);
+    if (successCount === totalFiles) {
+        console.log(`🎉 업로드 완료! ${successCount}개 사진이 '${formattedDateForFolderName}' 폴더에 성공적으로 업로드되었습니다.`);
     } else {
-        showSuccessMessage(
-            '일부 업로드 완료',
-            `성공: ${successCount}개, 실패: ${errorCount}개 (대상 폴더: '${formattedDateForFolderName}')
-자세한 내용은 개발자 콘솔을 확인하세요.`,
-            '⚠️'
-        );
+        console.log(`⚠️ 일부 업로드 완료: 성공 ${successCount}개, 실패 ${errorCount}개 (대상 폴더: '${formattedDateForFolderName}')`);
     }
     
     if (successCount > 0 && errorCount === 0) { // 모든 파일 성공 시에만 초기화
@@ -675,141 +610,38 @@ function formatCurrentTimeToYYMMDDHHNNSS() {
 
 
 // --- Status Message Functions ---
-function hideAllStatusMessages() {
-    if (apiLoadingMsg) apiLoadingMsg.style.display = 'none';
-    if (apiReadyMsg) apiReadyMsg.style.display = 'none';
-    if (loginSuccessMsg) loginSuccessMsg.style.display = 'none';
-    if (uploadProgressMsg) uploadProgressMsg.style.display = 'none';
-    if (generalMessageMsg) generalMessageMsg.style.display = 'none';
-}
 
-function showApiLoading() {
-    hideAllStatusMessages();
-    if (apiLoadingMsg) apiLoadingMsg.style.display = 'block';
-}
 
-function showApiReady() {
-    hideAllStatusMessages();
-    if (apiReadyMsg) apiReadyMsg.style.display = 'block';
-}
-
-function showLoginSuccess() {
-    hideAllStatusMessages();
-    if (loginSuccessMsg) loginSuccessMsg.style.display = 'block';
-}
-
-function showUploadProgress(text, details = '') {
-    hideAllStatusMessages();
-    if (uploadProgressMsg) {
-        uploadProgressMsg.style.display = 'block';
-        const textEl = document.getElementById('uploadProgressText');
-        const detailsEl = document.getElementById('uploadProgressDetails');
-        if (textEl) textEl.textContent = text;
-        if (detailsEl) detailsEl.innerHTML = details; // details는 HTML을 포함할 수 있으므로 innerHTML 사용
+// --- Login Check Functions ---
+function checkLoginAndPrompt(actionName = "이 기능을 사용") {
+    const tokenObject = gapi.client.getToken();
+    if (!tokenObject || !tokenObject.access_token) {
+        showLoginRequiredModal(actionName);
+        return false;
     }
+    return true;
 }
 
-function showGeneralMessage(content) {
-    hideAllStatusMessages();
-    if (generalMessageMsg) {
-        generalMessageMsg.style.display = 'block';
-        const contentEl = document.getElementById('generalMessageContent');
-        if (contentEl) {
-            // HTML 구조가 포함된 특별한 메시지인지 확인
-            if (typeof content === 'string' && content.includes('<div')) {
-                contentEl.innerHTML = content; // 기존 호환성 유지
-            } else {
-                contentEl.textContent = content; // 일반 텍스트
+function showLoginRequiredModal(actionName = "이 기능을 사용") {
+    const title = "🔐 로그인이 필요합니다";
+    const message = `${actionName}하려면 먼저 Google Drive에 로그인해주세요.`;
+    
+    showCustomConfirm(
+        title,
+        message,
+        () => {
+            // 확인 버튼을 누르면 로그인 버튼에 포커스
+            if (authorizeButton.style.display !== 'none') {
+                authorizeButton.focus();
+                // 버튼을 살짝 하이라이트
+                authorizeButton.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    authorizeButton.style.transform = '';
+                }, 200);
             }
-        }
-    }
-}
-
-// 에러 메시지를 위한 전용 함수
-function showErrorMessage(title, description, solutions = []) {
-    hideAllStatusMessages();
-    const errorTemplate = document.getElementById('errorTemplate');
-    if (errorTemplate && generalMessageMsg) {
-        const clonedTemplate = errorTemplate.cloneNode(true);
-        const titleEl = clonedTemplate.querySelector('#errorTitle');
-        const descEl = clonedTemplate.querySelector('#errorDescription');
-        const solutionsEl = clonedTemplate.querySelector('#errorSolutions');
-        
-        if (titleEl) titleEl.textContent = title;
-        if (descEl) descEl.textContent = description;
-        if (solutionsEl && solutions.length > 0) {
-            solutionsEl.innerHTML = '<br>' + solutions.map(sol => `• ${sol}`).join('<br>');
-        }
-        
-        generalMessageMsg.style.display = 'block';
-        const contentEl = document.getElementById('generalMessageContent');
-        if (contentEl) contentEl.innerHTML = clonedTemplate.innerHTML;
-    }
-}
-
-// 성공 메시지를 위한 전용 함수
-function showSuccessMessage(title, description, icon = '🎉') {
-    hideAllStatusMessages();
-    const successTemplate = document.getElementById('successTemplate');
-    if (successTemplate && generalMessageMsg) {
-        const clonedTemplate = successTemplate.cloneNode(true);
-        const iconEl = clonedTemplate.querySelector('#successIcon');
-        const titleEl = clonedTemplate.querySelector('#successTitle');
-        const descEl = clonedTemplate.querySelector('#successDescription');
-        
-        if (iconEl) iconEl.textContent = icon;
-        if (titleEl) titleEl.textContent = title;
-        if (descEl) descEl.textContent = description;
-        
-        generalMessageMsg.style.display = 'block';
-        const contentEl = document.getElementById('generalMessageContent');
-        if (contentEl) contentEl.innerHTML = clonedTemplate.innerHTML;
-    }
-}
-
-// 카메라 촬영 성공 메시지를 위한 전용 함수
-function showCameraSuccessMessage(photoCount, totalPhotos, totalSizeMB) {
-    hideAllStatusMessages();
-    const cameraTemplate = document.getElementById('cameraSuccessTemplate');
-    if (cameraTemplate && generalMessageMsg) {
-        const clonedTemplate = cameraTemplate.cloneNode(true);
-        const statsEl = clonedTemplate.querySelector('#cameraSuccessStats');
-        
-        if (statsEl) {
-            statsEl.innerHTML = `${photoCount}장 추가 (총 ${totalPhotos}장)<br>총 크기: ${totalSizeMB}MB`;
-        }
-        
-        generalMessageMsg.style.display = 'block';
-        const contentEl = document.getElementById('generalMessageContent');
-        if (contentEl) contentEl.innerHTML = clonedTemplate.innerHTML;
-    }
-}
-
-// 상태 정보 메시지를 위한 전용 함수
-function showStatusInfo(text) {
-    hideAllStatusMessages();
-    const statusTemplate = document.getElementById('statusInfoTemplate');
-    if (statusTemplate && generalMessageMsg) {
-        const clonedTemplate = statusTemplate.cloneNode(true);
-        const textEl = clonedTemplate.querySelector('#statusInfoText');
-        
-        if (textEl) textEl.textContent = text;
-        
-        generalMessageMsg.style.display = 'block';
-        const contentEl = document.getElementById('generalMessageContent');
-        if (contentEl) contentEl.innerHTML = clonedTemplate.innerHTML;
-    }
-}
-
-// 카메라 fallback 메시지를 위한 전용 함수
-function showCameraFallback() {
-    hideAllStatusMessages();
-    const fallbackTemplate = document.getElementById('cameraFallbackTemplate');
-    if (fallbackTemplate && generalMessageMsg) {
-        generalMessageMsg.style.display = 'block';
-        const contentEl = document.getElementById('generalMessageContent');
-        if (contentEl) contentEl.innerHTML = fallbackTemplate.innerHTML;
-    }
+        },
+        null
+    );
 }
 
 // --- Toggle Functions ---
