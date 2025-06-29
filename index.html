@@ -7,14 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 
-    <!-- Manifest 연결 -->
-    <link rel="manifest" href="/manifest.json">
-    
-    <!-- 아이폰, 사파리 대응 -->
-    <link rel="apple-touch-icon" href="/icons/icon-192.png">
-    
-    <!-- 테마 색상 지정 -->
-    <meta name="theme-color" content="#4CAF50">
 
 </head>
 <body>
@@ -109,14 +101,6 @@
     <!-- 그 다음 Google API 스크립트들 로드 -->
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
-    
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(() => console.log("Service Worker 등록 완료"))
-                .catch(err => console.log("SW 등록 실패:", err));
-        }
-    </script>
     
 </body>
 </html>
