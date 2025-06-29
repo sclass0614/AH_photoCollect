@@ -3,13 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>사진 촬영 및 구글 드라이브 업로드</title>
+    <title>구글 드라이브 사진관리</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+
+    <!-- Manifest 연결 -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- 아이폰, 사파리 대응 -->
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    
+    <!-- 테마 색상 지정 -->
+    <meta name="theme-color" content="#4CAF50">
+
 </head>
 <body>
     <header>
-        <h1>구글드라이브 사진 관리</h1>
+        <h1>구글 드라이브 사진 관리</h1>
         <div class="auth-buttons">
             <button id="authorize_button">Google Drive 로그인</button>
             <button id="signout_button" style="display: none;">Google Drive 로그아웃</button>
